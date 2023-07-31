@@ -1,0 +1,391 @@
+Лекция 10.07
+
+В SQL есть объединение или соединение таблиц
+
+Оператор union  - существует в двух вариантах - union и union all
+
+Оператор union объединяет две таблицы и убирает дублирующиеся строки. 
+Union all объединяет две таблицы, но не удаляет дублирующиеся строки. 
+Оба оператора используются ситуативно.
+
+Создаем БД завод  - plant
+
+create database plant;
+
+use plant;
+
+Создаем таблицы работников: 
+create table employees (
+
+id int,
+
+first_name varchar (255),
+
+last_name varchar (255),
+
+age int,
+
+salary int
+
+);
+
+create table staff (
+
+id int,
+
+first_name varchar (255),
+
+last_name varchar (255),
+
+age int,
+
+staff_type varchar (255)
+
+);
+
+Помещаем значения в эти таблицы:
+
+insert into employees values 
+
+                        (1, ‘Alex’, ‘Alexeev’, 45, 1000),
+
+                        (2, ‘Oleg’, ‘Olegov’, 20, 500);
+
+select * from employees;
+
+insert into staff values
+
+(1, ‘Maxim’, ‘Maximov’, 30, ‘cleaner’),
+
+(2, ‘Serg’, ‘Maximov’, 52, ‘security’);
+
+select * from staff;
+
+Задача - объединить обе таблицы и выбрать всех, кто работает на этом заводе. 
+Нужно выбрать из обеих таблиц поля id, first_name, last_name и использовать union для объединения
+
+select id, first_name, last_name from employees
+
+union
+
+select id, first_name, last_name from staff;
+
+В результате получаем объединенную таблицу
+
+Важно понимать, что структуру результирующей таблицы всегда задает первый select, 
+то есть именно он определяет количество колонок, их имена, последовательность. 
+Все остальные селекты, которые мы присоединяем с помощью union будут отформатированы в соответствии с первым селектом.
+
+Задача - в результирующей таблице вывести поля id, first_name, surname вместо last_name:
+
+select id, first_name, last_name as surname from employees
+
+union
+
+select id, first_name, last_name from staff;
+
+В результирующей таблице колонка last_name будет переименована в колонку surname, 
+при этом никаких переименований во втором селекте мы не делаем.
+
+Для оператора union также важно при объединении таблиц, 
+чтобы в колонках, которые мы матчим, совпадал тип данных!
+
+Задача - добавляем в результирующую таблицу поле salary, которое есть 
+в первой таблице, но которого нет во второй, для этого воспользуемся константой: 
+
+select id, last_name as surname, first_name, salary from employees
+
+union
+
+select id, last_name, first_name, 0 from staff;
+
+// проставляем во втором селекте ноль как константу (учитываем тип данных int этого поля)
+
+Точно также действуем, применяя константу, когда в первом селекте не хватает колонки, которая есть во втором селекте:
+
+select id, last_name as surname, first_name, ‘ ’ as staff_type from employees 
+
+// здесь используем пустую строку как константу
+
+union
+
+select id, last_name, first_name, staff_type from staff;
+
+В результирующей таблице будет пустая строка для значений поля staff_type для полей первой таблицы
+
+Запросы с union также можно хранить во view
+
+Создаем третью таблицу с административными работниками и матчим ее с первыми двумя таблицами:
+
+create table administration (
+
+id int,
+
+first_name varchar (255),
+
+last_name varchar (255),
+
+age int
+
+);
+
+insert into administration values 
+
+(1, ‘Maxim’, ‘Maximov’, 30), // это повторяющееся значение
+
+(2, ‘Andrew’, ‘Andreev’, 35);
+
+select * from administration;
+
+Объединяем эту таблицу с таблицей staff, где есть дублирующееся поле (1, ‘Maxim’, ‘Maximov’, 30)
+
+select id, first_name, last_name, age from staff
+
+union
+
+select id, first_name, last_name, age from administration;
+
+В итоговой таблице вместо 4х записей будет 3, поскольку union удаляет дубликаты
+
+Чтобы этого избежать, используем оператор union all
+
+Оператор union all более ресурсозатратный, чем union, поскольку он использует сортировку и отсеивание дублей
+
+Либо можно проставить дополнительную колонку для однозначной идентификации поля, которое без этой доп колонки становится дублем:
+
+select id, first_name, last_name, age, ‘staff’ as type from staff
+
+union all
+
+select id, first_name, last_name, age, ‘administration’ from administration;
+
+Задача - объединить 3 таблицы - staff, employees, administration. 
+В результ. таблице должны быть колонки name, surname, age, 
+type(тип персонала со значениями adm, wrk, stf):
+
+select first_name as name, last_name as surname, age, ‘adm’ as type from administration
+
+union all
+
+select first_name, last_name, age, ‘wrk’ from employees
+
+union all
+
+select first_name, last_name, age, ‘stf’ from staff;
+
+Создаем две таблицы товаров, используя ту же БД
+
+create table goods (
+
+id int primary key auto_increment,
+
+title varchar (255),
+
+quantity int check (quantity between 0 and 10)
+
+);
+
+insert into goods (title, quantity) values
+
+                                                     (’bike’, 4),
+
+                                                     (’skis’, 5),
+
+                                                     (’skates’, 7),
+
+                                                     (’skateboards’, 2);
+
+select * from goods;
+
+create table reserve_goods (
+
+id int primary_key outo_increment,
+
+title varchar (255),
+
+quantity int check (quantity between 0 and 10),
+
+price int
+
+);
+
+insert into reserve_goods (title, quantity, price) values
+
+                                                     (’bike’, 12000, 4),
+
+                                                     (’skis’, 10000, 5),
+
+                                                     (’skates’, 6000, 7),
+
+                                                     (’skateboards’, 10000, 2);
+
+select * from reserve_goods;
+
+Задача - выбрать все товары из 1й таблицы и из 2й таблицы, при этом удалить все дубли. 
+Не включать в выборку колонку price
+
+select id, title, quantity from goods
+
+union
+
+select id, title, quantity from reserve_goods;
+
+Задача - выбрать все товары из обеих таблиц, не включать в выборку колонку price оставить дубли:
+
+select id, title, quantity from goods
+
+union all
+
+select id, title, quantity from reserve_goods;
+
+Задача - выбрать все товары из обеих таблиц и добавить колонку price
+
+select id, title, quantity, price from reserve_goods
+
+union all
+
+select id, title, quantity, 0 from goods;
+
+Отсортировать итоговую таблицу по убыванию цены
+
+select id, title, quantity, price from reserve_goods
+
+union all
+
+select id, title, quantity, 0 from goods
+
+order by price desk;
+
+Соединение таблиц, оператор join
+
+Join используется очень часто
+
+С помощью join можно соединить две и более таблицы в одну
+
+Для того, чтобы соединить таблицы с join нужно использовать некое условие, 
+по которому таблицы будут соединены. Если union и union all  - это вертикальное 
+объединение таблиц, то join это горизонтальное соединение таблиц.
+
+При этом строки объединяются с помощью одинакового общего для них значения, 
+в роли которого выступает обычно первичный ключ.
+
+Есть несколько видов join и для каждого из них есть собственное условие для соединения таблиц
+
+Inner join  - внутреннее соединение таблиц по уникальному совпадению (id)
+
+В результате будут выведены только те строки, для которых это совпадение нашлось. 
+
+Создаем БД students
+
+create database students;
+
+use students;
+
+create table students (
+
+id int primary key,
+
+name varchar (128)
+
+);
+
+create table ages (
+
+age int,
+
+student_id int
+
+);
+
+insert into students values 
+
+(1, ‘Alex’),
+
+(2, ‘Oleg’),
+
+(3, ‘Maxim’);
+
+Нужно добавить двум студентам возраста в таблицу возрастов ( Alex, 45  Maxim, 30)
+
+insert into ages (age, student_id) values 
+
+(45, 1),
+
+(30, 3);
+
+Соединяем эти две таблицы. При этом берутся колонки одной таблицы и к ним присоединяются 
+колонки второй в ту же строку. В итоге мы должны получить таблицу с колонками id, name age. 
+Обязательно нужно указать условие, то есть поле, по которому будет происходить соединение, 
+для этого используем оператор on.  И поскольку имена таблиц обычно очень длинные, 
+принято для них использовать альясы, типа t1 t2 итд
+
+select t1.id, t1.name, t2.age
+
+from students as t1
+
+inner join ages as t2 
+
+on [t1.id](http://t1.id) = t2.student_id;
+
+Создаем таблицу, где будем хранить фамилии студентов:
+create table students_lastname(
+
+student_id int,
+
+name varchar (128)
+
+);
+
+insert into students_lastname values 
+
+(3, ‘Maximov’),
+
+(1, ‘Alexeev’),
+
+(2, ‘Olegov’);
+
+Задача - выбрать результаты из таблицы студентов и из таблицы фамилий, 
+в качестве итоговой таблицы вывести id студента, колонку name и колонку last_name
+
+select t1.id, [t1.name](http://t1.name) as first_name, [t2.name](http://t2.name) as last_name
+
+from students as t1
+
+inner join students_lastname as t2
+
+on [t1.id](http://t1.id) = t2.student_id;
+
+Задача - приджойнить три таблицы. Вывести в итоговую таблицу id студента, first_name, last_name, age
+
+select t1.id, [t1.name](http://t1.name) as first_name, [t2.name](http://t2.name) as last_name, t3.age
+
+from students as t1
+
+inner join students_lastname as t2
+
+on [t1.id](http://t1.id) = t2.student_id
+
+inner join ages as t3
+
+on [t1.id](http://t1.id) = t3.student_id;
+
+Можно добавить условие в выборку с join:
+
+select t1.id, [t1.name](http://t1.name) as first_name, [t2.name](http://t2.name) as last_name
+
+from students as t1
+
+inner join students_lastname as t2
+
+on [t1.id](http://t1.id) = t2.student_id
+
+where [t1.id](http://t1.id) > 2;
+
+Либо так:
+select t1.id, [t1.name](http://t1.name) as first_name, [t2.name](http://t2.name) as last_name
+
+from students as t1
+
+inner join students_lastname as t2
+
+on [t1.id](http://t1.id) = t2.student_id and t1.id > 2;
