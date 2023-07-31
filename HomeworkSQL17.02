@@ -1,0 +1,81 @@
+create database library;
+use library;
+
+create table readers (
+    id int primary key auto_increment,
+    first_name varchar(80) not null,
+    last_name varchar(80) not null,
+    age int,
+    reader_status varchar(5) check (reader_status in ('act', 'inact')),
+    books_on_hand int check (books_on_hand between 0 and 10)
+);
+
+create table library_staff (
+    id int primary key auto_increment,
+    first_name varchar(80) not null,
+    last_name varchar(80) not null,
+    age int,
+    reader_status varchar(5) check (reader_status in ('act', 'inact')),
+    monthly_payment int,
+    reading_rooms int
+);
+
+create table  support_staff (
+    id int primary key auto_increment,
+    first_name varchar(80) not null,
+    last_name varchar(80) not null,
+    age int,
+    reader_status varchar(5) check (reader_status in ('act', 'inact')),
+    monthly_payment int
+);
+
+insert into readers (first_name, last_name, age, reader_status, books_on_hand)
+values
+    ('Albert', 'Kamus', 25, 'act', 3),
+    ('Wirginia', 'Woolf', 32, 'inact', 2),
+    ('Simone', 'de Beavvoir', 51, 'act', 4),
+    ('Fridrich', 'Nietzsche', 32, 'inact', 0),
+    ('Hanna', 'Arendt', 65, 'act', 3);
+
+select * from readers;
+
+insert into library_staff (first_name, last_name, age, reader_status, monthly_payment, reading_rooms)
+values
+    ('Jean-Paul', 'Sartre', 28, 'act', 5000, 2),
+    ('George', 'Orwell', 35, 'act', 7000, 3),
+    ('Jean', 'Baudrillard', 42, 'inact', 8000, 1),
+    ('Margaret', 'Atwood', 28, 'inact', 9200, 2),
+    ('Nelle', 'Harper lee', 54, 'act', 7400, 0);
+    
+select * from library_staff;    
+
+insert into support_staff (first_name, last_name, age, reader_status, monthly_payment)
+values
+    ('Slavoj', 'Zizek', 45, 'act', 9000),
+    ('Emily', 'Dickinson', 39, 'act', 8500),
+    ('Philippa', 'Foot', 57, 'inact', 6300 );
+    
+select * from support_staff;
+    
+select * from readers where books_on_hand > 0 and reader_status = 'inact';
+
+select first_name, last_name, age, monthly_payment, 'Library Staff' as role
+from library_staff 
+where monthly_payment > 6000
+union all
+select first_name, last_name, age, monthly_payment, 'Support Staff'
+from support_staff 
+where monthly_payment > 3000
+order by monthly_payment asc;
+
+select concat(first_name, ' ', last_name) as FIO, age, 0 as monthly_payment, books_on_hand, 0 as num_of_reading_rooms, 'Reader' as role
+from readers
+where reader_status = 'act'
+union all
+select concat(first_name, ' ', last_name), age, monthly_payment, 0, num_of_reading_rooms, 'Library Staff'
+from library_staff
+where reader_status = 'act'
+union all
+select concat(first_name, ' ', last_name), age, monthly_payment, 0, 0, 'Support Staff'
+from support_staff
+where reader_status = 'act';
